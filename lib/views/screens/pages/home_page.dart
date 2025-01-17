@@ -15,6 +15,9 @@ class HomePage extends ConsumerStatefulWidget {
 
 class _HomePageState extends ConsumerState<HomePage> {
   late AppDatabase database;
+  var deleteItem = -1;
+  var deletedTitle = '';
+  var deletedDescription = '';
 
   @override
   void initState() {
@@ -39,13 +42,22 @@ class _HomePageState extends ConsumerState<HomePage> {
                   itemCount: data.length,
                   itemBuilder: (BuildContext context, int index) {
                     return ListTile(
-                      title: Text(
-                        data[index].title,
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
+                      title: index == deleteItem
+                          ? Text(
+                              data[index].title,
+                              style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                                decoration: TextDecoration.lineThrough,
+                              ),
+                            )
+                          : Text(
+                              data[index].title,
+                              style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                       subtitle: Text(
                         data[index].description,
                       ),
@@ -58,11 +70,44 @@ class _HomePageState extends ConsumerState<HomePage> {
                           ),
                           IconButton(
                             onPressed: () {
-                              ref
-                                  .read(todoItemNotifierProvider.notifier)
-                                  .deleteTodo(
-                                    id: data[index].id,
-                                  );
+                              setState(() {
+                                deleteItem = index;
+                              });
+                              deletedTitle = data[index].title;
+                              deletedDescription = data[index].description;
+                              Future.delayed(Duration(seconds: 5), () {
+                                ref
+                                    .read(todoItemNotifierProvider.notifier)
+                                    .deleteTodo(
+                                      id: data[index].id,
+                                    );
+                                setState(() {
+                                  deleteItem = -1;
+                                });
+                              });
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Row(
+                                    children: [
+                                      Text(
+                                        "You have successfully delted the Todo",
+                                      ),
+                                      TextButton(
+                                        onPressed: () {
+                                          ref
+                                              .read(todoItemNotifierProvider
+                                                  .notifier)
+                                              .createTodo(
+                                                title: deletedTitle,
+                                                description: deletedDescription,
+                                              );
+                                        },
+                                        child: Text("Undo"),
+                                      )
+                                    ],
+                                  ),
+                                ),
+                              );
                             },
                             icon: Icon(Icons.delete),
                           ),
